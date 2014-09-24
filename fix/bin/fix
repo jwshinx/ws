@@ -27,6 +27,49 @@ default_value 'the default'
 arg_name 'The name of the argument'
 flag [:f,:flagname]
 
+desc 'Create git alias commands'
+arg_name '/path/to/project/.git/config'
+command :create_git_aliases do |c|
+  c.desc 'Describe a switch to create_git_aliases'
+  c.switch :s
+
+  c.desc 'Path and input file.'
+  c.default_value 'default'
+  c.flag :f
+  c.action do |global_options,options,args|
+    #print_options global_options,options,args
+    puts "\n---> start: create_git_aliases command ran"
+    puts "---> reading file"
+    begin
+      alreadythere = open("#{options[:f]}", "r") do |f|
+        puts "   #{options[:f]}"
+        pattern = /\[alias\]/
+        is_match_found = while (line = f.gets)
+          break true if(line.strip =~ pattern)
+        end
+        is_match_found == true ? true : false
+      end
+      if alreadythere
+        puts "---> [alias] already there. do nothing"
+      else
+        puts "---> [alias] not there. lets append!"
+        open("#{options[:f]}", 'a') { |f|
+          f << "[alias]\n"
+          f << "        co = checkout\n"
+          f << "        br = branch\n"
+          f << "        st = status -s\n"
+          f << "        all = log --oneline --graph --decorate --all\n"
+          f << "        logp = log --pretty=format:'%h%x09%an%x09%ad%x09%s' --date=short\n"
+          f << "        d = diff\n"
+        }
+      end
+    rescue => err
+      puts "Exception reading in file: #{err}"
+      err
+    end
+    puts "--->   end: create_git_aliases command ran"
+  end
+end
 
 desc 'Delete files recursively'
 arg_name '/path/to/file/list_of_rdoc_files.txt'
@@ -54,7 +97,7 @@ command :file_delete do |c|
           if filename =~ pattern
             if Dir.exists? filename
               FileUtils.remove_dir(filename)
-              puts "        deleted: #{filename}"  
+              puts "        deleted: #{filename}"
             else
               puts ' doc not exists: ' + filename
             end
@@ -96,13 +139,13 @@ command :trailing_ws do |c|
       puts "Exception reading in file: #{err}"
       err
     end
-    
+
     puts "---> writing file"
     begin
       open("#{options[:f]}.tmp", "w") do |f|
         sents.each do |line|
           f << "#{line.rstrip}\n"
-        end 
+        end
       end
     rescue => err
       puts "Exception writing out file: #{err}"
